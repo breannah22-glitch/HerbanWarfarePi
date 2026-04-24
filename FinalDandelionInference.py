@@ -249,7 +249,7 @@ with device as stream:
 			
 			# SPRAY if detection count reached, centered, at bottom of frame
 			# and if the bounding box is a certain size (distance)
-			if detection_count >= DETECTION_THRESHOLD and abs(error_x) < 50 and error_y < 100: # and MIN_WIDTH <= bbox_width <= MAX_WIDTH:
+			if detection_count >= DETECTION_THRESHOLD and abs(error_x) < 50 and error_y < 100: and MIN_WIDTH <= bbox_width <= MAX_WIDTH:
 				# send_velocity(0.0,0.0)
 				send_spray()
 				spray_active = True
