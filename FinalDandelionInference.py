@@ -75,10 +75,10 @@ def send_velocity(linear,angular):
 	if ser:
 		ser.write(f"LIN {linear} ".encode())
 		ser.write(f"ANG {angular}\n".encode())
-		#print(f"[SER] VEL linear={linear:.3f}, angular={angular:.3f}")
+		print(f"[SER] VEL linear={linear:.3f}, angular={angular:.3f}")
 	else:
 		None
-		#print(f"[SIM] VEL linear={linear:.3f}, angular={angular:.3f}")
+		print(f"[SIM] VEL linear={linear:.3f}, angular={angular:.3f}")
 
 def send_spray():
 	if ser:
@@ -141,6 +141,7 @@ SPRAY_DURATION = 1.0
 COOLDOWN = 0.0
 spray_start_time = 0.0
 spray_active = False
+stop_sent = False
 
 DANDELION_CLASS_ID = 0
 
@@ -178,11 +179,15 @@ with device as stream:
 			else: # stops movement and detections for spray
 				linear = 0.0
 				angular = 0.0
-				if current_time - last_velocity_time >= VELOCITY_INTERVAL:
-					if angle_x > ANGLE_THRESHOLD:
-						send_velocity(0.0,angular)
-					else:
-						send_velocity(linear,0.0)
+				send_velocity(linear,angular)
+				ser = None # stops sending serial data for duration of spray
+				time.sleep(1.5)
+				ser = serial.Serial(TEENSY_PORT, BAUD, timeout=0.1)
+				# if current_time - last_velocity_time >= VELOCITY_INTERVAL:
+					# if angle_x > ANGLE_THRESHOLD:
+						# send_velocity(0.0,angular)
+					# else:
+						# send_velocity(linear,0.0)
 				print(f"[COOLDOWN] {SPRAY_DURATION + COOLDOWN - time_since_spray:.2f}s remaining")
 				detections = detections[0:0]
 			
@@ -234,7 +239,7 @@ with device as stream:
 			centered = abs(error_x) < 20
 			if centered:
 				bbox_width = (x2-x1)
-				print(f"width={bbox_width}")
+				#print(f"width={bbox_width}")
 			else:
 				bbox_width = None
 			
@@ -244,7 +249,8 @@ with device as stream:
 			
 			# SPRAY if detection count reached, centered, at bottom of frame
 			# and if the bounding box is a certain size (distance)
-			if detection_count >= DETECTION_THRESHOLD and abs(error_x) < 20 and error_y < 50 and MIN_WIDTH <= bbox_width <= MAX_WIDTH:
+			if detection_count >= DETECTION_THRESHOLD and abs(error_x) < 50 and error_y < 100: # and MIN_WIDTH <= bbox_width <= MAX_WIDTH:
+				# send_velocity(0.0,0.0)
 				send_spray()
 				spray_active = True
 				spray_start_time = current_time
